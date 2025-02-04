@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation"; 
+import { jwtDecode } from "jwt-decode";
+
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,9 +13,12 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const router = useRouter(); 
 
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: {
@@ -23,15 +29,28 @@ const Login = () => {
 
     const data = await response.json();
 
-    if (response.ok) {
-      // Successfully logged in
-      localStorage.setItem("token", data.token); // Store the token in localStorage
-      window.location.href = "/dashboard"; // Redirect to dashboard
-    } else {
-      // Handle login error
-      setErrorMessage(data.message || "Something went wrong!");
+    if (!response.ok) {
+      throw new Error(data.error || "Something went wrong!");
     }
-  };
+
+    // ✅ Store token
+    localStorage.setItem("token", data.token);
+
+    // ✅ Decode token to get role
+    const decodedToken: any = jwtDecode(data.token);
+    const userRole = decodedToken.role;
+
+    if (!userRole) {
+      throw new Error("User role not found in token.");
+    }
+
+    // ✅ Use Next.js router for navigation
+    router.push(userRole === "ADMIN" ? "/dashboard" : "/");
+  } catch (error: any) {
+    setErrorMessage(error.message);
+  }
+};
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">

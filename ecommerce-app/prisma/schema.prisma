@@ -8,13 +8,18 @@ generator client {
 }
 
 
-//User Model
-
+// User Model
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   password  String
-  role      String   @default("customer")  // This will default to 'customer' unless specified as 'admin'
+  role      Role     @default(CUSTOMER)  // Use ENUM instead of string
   createdAt DateTime @default(now())
+}
+
+// Role Enum
+enum Role {
+  ADMIN
+  CUSTOMER
 }
