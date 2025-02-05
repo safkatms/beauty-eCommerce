@@ -7,14 +7,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 // User Model
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(CUSTOMER)  // Use ENUM instead of string
+  role      Role     @default(CUSTOMER)
   createdAt DateTime @default(now())
 }
 
@@ -22,4 +21,56 @@ model User {
 enum Role {
   ADMIN
   CUSTOMER
+}
+
+// Product Model
+model Product {
+  id               Int      @id @default(autoincrement())
+  name             String
+  brandId          Int
+  brand           Brand   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  productSerialNo  String  @unique
+  color           String?
+  subCategoryId   Int
+  subCategory     SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  categoryId      Int
+  category        Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  purchasePrice   Decimal @db.Decimal(10,2)
+  sellingPrice    Decimal @db.Decimal(10,2)
+  discount        Decimal? @db.Decimal(5,2)  // Stores percentage discount
+  priceAfterDiscount Decimal? @db.Decimal(10,2) @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([name, brandId])  // Ensure unique name per brand
+}
+
+// Brand Model
+model Brand {
+  id   Int  @id @default(autoincrement())
+  name String  @unique
+  products Product[]
+
+  @@index([name])
+}
+
+// Category Model
+model Category {
+  id   Int @id @default(autoincrement())
+  name String @unique
+  subCategories SubCategory[]
+  products Product[]
+
+  @@index([name])
+}
+
+// SubCategory Model
+model SubCategory {
+  id         Int @id @default(autoincrement())
+  name       String @unique
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  products   Product[]
+
+  @@index([name])
 }
