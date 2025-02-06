@@ -70,7 +70,7 @@ export default function AdminSidebar() {
               <div className="ml-6 space-y-2">
                 <SidebarLink href="/categories" label="All Categories" />
                 <SidebarLink
-                  href="/admin/subcategories"
+                  href="/subCategories"
                   label="Subcategories"
                 />
               </div>
