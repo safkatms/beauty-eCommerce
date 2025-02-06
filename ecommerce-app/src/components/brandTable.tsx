@@ -12,7 +12,7 @@ import {
 } from "@tanstack/react-table";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react"; // Import Lucide Trash icon
-import { toast,ToastContainer } from "react-toastify"; // Import toast from react-toastify
+import { toast, ToastContainer } from "react-toastify"; // Import toast from react-toastify
 import "react-toastify/dist/ReactToastify.css"; // Import toast styles
 import Swal from "sweetalert2";
 
@@ -54,13 +54,13 @@ const BrandTable = () => {
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, delete it!",
     });
-  
+
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`/api/brands/${id}`, { method: "DELETE" });
-  
+        const response = await fetch(`/api/brands/delete/${id}`, { method: "DELETE" });
+
         if (!response.ok) throw new Error("Failed to delete brand");
-  
+
         setBrands((prev) => prev.filter((brand) => brand.id !== id));
         toast.success("Brand deleted successfully!");
       } catch (error) {
@@ -79,6 +79,7 @@ const BrandTable = () => {
         <button
           onClick={() => handleDelete(row.original.id)}
           className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 flex items-center justify-center"
+          disabled={loading}
         >
           <Trash2 size={18} />
         </button>
@@ -138,8 +139,15 @@ const BrandTable = () => {
                     className="p-3 text-left cursor-pointer hover:bg-pink-700 transition-all"
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                    {header.column.getIsSorted() === "asc" ? " 🔼" : header.column.getIsSorted() === "desc" ? " 🔽" : ""}
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                    {header.column.getIsSorted() === "asc"
+                      ? " 🔼"
+                      : header.column.getIsSorted() === "desc"
+                      ? " 🔽"
+                      : ""}
                   </th>
                 ))}
               </tr>
@@ -148,17 +156,26 @@ const BrandTable = () => {
           <tbody className="bg-white">
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="border-b hover:bg-gray-100 transition">
+                <tr
+                  key={row.id}
+                  className="border-b hover:bg-gray-100 transition"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="p-3 border">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </td>
                   ))}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="text-center p-4 text-gray-500">
+                <td
+                  colSpan={columns.length}
+                  className="text-center p-4 text-gray-500"
+                >
                   No brands found.
                 </td>
               </tr>
@@ -176,7 +193,8 @@ const BrandTable = () => {
           Previous
         </button>
         <span className="text-gray-700">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+          Page {table.getState().pagination.pageIndex + 1} of{" "}
+          {table.getPageCount()}
         </span>
         <button
           onClick={() => table.nextPage()}
@@ -188,7 +206,7 @@ const BrandTable = () => {
       </div>
 
       {/* Toast Container */}
-      <ToastContainer/>
+      <ToastContainer />
     </div>
   );
 };
