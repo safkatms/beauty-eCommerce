@@ -96,7 +96,7 @@ if (loading)
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full border border-gray-300 shadow-md rounded-lg">
-          <thead className="bg-pink-600 text-white sticky top-0">
+          <thead className="bg-pink-600 text-white top-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
