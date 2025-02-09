@@ -133,7 +133,7 @@ const SubCategoryTable = () => {
 
   return (
     <div className="p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">SubCategory List</h2>
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">Sub-Category List</h2>
 
       <div className="mb-4">
         <input

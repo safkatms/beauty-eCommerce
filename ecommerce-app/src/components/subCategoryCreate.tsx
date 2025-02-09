@@ -72,7 +72,7 @@ interface Category {
       
   return (
     <div className="bg-white shadow-lg p-4 rounded-lg mb-4">
-      <h2 className="text-lg font-bold mb-2">Add a New SubCategory</h2>
+      <h2 className="text-lg font-bold mb-2">Add a New Sub-Category</h2>
       <form onSubmit={handleAddSubCategory} className="flex gap-2">
         <input
           type="text"

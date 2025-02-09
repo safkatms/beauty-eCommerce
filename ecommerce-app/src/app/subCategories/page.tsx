@@ -16,7 +16,7 @@ export default function SubCategories() {
 
       {/* Main Content (Takes remaining space) */}
       <div className="flex-1 p-6 overflow-auto">
-        <h1 className="text-2xl font-bold mb-4">Manage SubCategories</h1>
+        <h1 className="text-2xl font-bold mb-4">Manage Sub-Categories</h1>
 
         {/* Toggle Button */}
         <button
@@ -24,7 +24,7 @@ export default function SubCategories() {
           className="mb-4 bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition flex items-center gap-2"
         >
           {showCreateForm ? <X size={18} /> : <Plus size={18} />}
-          {showCreateForm ? "Hide Create Form" : "Add New SubCategory"}
+          {showCreateForm ? "Hide Create Form" : "Add New Sub-Category"}
         </button>
 
         {/* Conditional Rendering of Create Form */}

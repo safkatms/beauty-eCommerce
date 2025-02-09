@@ -45,7 +45,7 @@ export default function AdminSidebar() {
             label="Dashboard"
           />
           <SidebarLink
-            href="/admin/products"
+            href="/products"
             icon={<Package size={20} />}
             label="Products"
           />
