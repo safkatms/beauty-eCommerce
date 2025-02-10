@@ -1,6 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // Import Next.js router
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,10 +10,9 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { motion } from "framer-motion";
-import { Trash2 } from "lucide-react";
+import { Eye } from "lucide-react"; // Import Eye icon
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Swal from "sweetalert2";
 
 interface Product {
   id: string;
@@ -24,10 +22,11 @@ interface Product {
   subCategory: { name: string };
   sellingPrice: number;
   quantity: number | null;
-  images: { imageUrl: string }[]; // Ensure images array exists
+  images: { imageUrl: string }[];
 }
 
 const ProductTable = () => {
+  const router = useRouter(); // Initialize router
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,33 +48,6 @@ const ProductTable = () => {
     fetchProducts();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "This action cannot be undone!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const response = await fetch(`/api/products/delete/${id}`, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) throw new Error("Failed to delete product");
-
-        setProducts((prev) => prev.filter((product) => product.id !== id));
-        toast.success("Product deleted successfully!");
-      } catch (error) {
-        toast.error("Error deleting product");
-      }
-    }
-  };
-
   const columns: ColumnDef<Product>[] = [
     { accessorKey: "id", header: "ID", sortingFn: "alphanumeric" },
     {
@@ -94,12 +66,12 @@ const ProductTable = () => {
           />
         );
       },
-    },        
+    },
     { accessorKey: "name", header: "Product Name", sortingFn: "text" },
     { accessorKey: "brand.name", header: "Brand", sortingFn: "text" },
     { accessorKey: "category.name", header: "Category", sortingFn: "text" },
     { accessorKey: "subCategory.name", header: "SubCategory", sortingFn: "text" },
-    { accessorKey: "sellingPrice", header: "Price ($)", sortingFn: "basic" },
+    { accessorKey: "sellingPrice", header: "Price (৳)", sortingFn: "basic" },
     {
       accessorKey: "quantity",
       header: "Stock",
@@ -110,11 +82,11 @@ const ProductTable = () => {
       header: "Actions",
       cell: ({ row }) => (
         <button
-          onClick={() => handleDelete(row.original.id)}
-          className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 flex items-center justify-center"
+          onClick={() => router.push(`/products/${row.original.id}`)} // Navigate to product details
+          className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 flex items-center justify-center"
           disabled={loading}
         >
-          <Trash2 size={18} />
+          <Eye size={18} />
         </button>
       ),
     },
