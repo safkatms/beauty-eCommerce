@@ -197,8 +197,6 @@ const SubCategoryTable = () => {
           Next
         </button>
       </div>
-
-      <ToastContainer />
     </div>
   );
 };

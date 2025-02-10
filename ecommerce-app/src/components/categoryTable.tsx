@@ -179,8 +179,6 @@ const CategoryTable = () => {
           Next
         </button>
       </div>
-
-      <ToastContainer />
     </div>
   );
 };

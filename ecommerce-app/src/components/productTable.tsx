@@ -196,8 +196,6 @@ const ProductTable = () => {
           Next
         </button>
       </div>
-
-      <ToastContainer />
     </div>
   );
 };

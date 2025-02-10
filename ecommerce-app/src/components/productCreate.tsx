@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface Brand {
   id: number;
@@ -63,7 +65,31 @@ export default function ProductForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [serialNumberError, setSerialNumberError] = useState<string | null>(null);
 
+const checkSerialNumberUnique = async (serialNo: string) => {
+  if (!serialNo) return;
+
+  try {
+    const response = await fetch(`/api/products/checkSerial?serialNo=${serialNo}`);
+    const data = await response.json();
+
+    if (data.exists) {
+      setSerialNumberError("This serial number is already in use.");
+    } else {
+      setSerialNumberError(null);
+    }
+  } catch (error) {
+    console.error("Error checking serial number:", error);
+    setSerialNumberError("Error checking serial number.");
+  }
+};
+
+const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const serialNo = e.target.value;
+  setProductData({ ...productData, productSerialNo: serialNo });
+  checkSerialNumberUnique(serialNo);
+};
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -99,7 +125,7 @@ export default function ProductForm({
     setLoading(true);
     setError("");
     setSuccess("");
-
+  
     const formData = new FormData();
     formData.append("brandId", productData.brandId);
     formData.append("categoryId", productData.categoryId);
@@ -109,30 +135,31 @@ export default function ProductForm({
     formData.append("purchasePrice", productData.purchasePrice.toString());
     formData.append("sellingPrice", productData.sellingPrice.toString());
     formData.append("hasVariants", JSON.stringify(productData.hasVariants));
-
+  
     if (!productData.hasVariants && productData.quantity !== undefined) {
       formData.append("quantity", productData.quantity.toString());
     }
-
+  
     // Append images
     productData.images.forEach((image) => {
       formData.append("images", image);
     });
-
+  
     // Append variants
     if (productData.hasVariants) {
       formData.append("variants", JSON.stringify(productData.variants));
     }
-
+  
     try {
       const response = await fetch("/api/products", {
         method: "POST",
         body: formData,
       });
-
+  
       if (!response.ok) throw new Error("Failed to create product");
-
-      setSuccess("Product added successfully!");
+  
+      toast.success("✅ Product added successfully!"); // Success toast
+  
       setProductData({
         brandId: "",
         categoryId: "",
@@ -146,18 +173,14 @@ export default function ProductForm({
         images: [],
         variants: [],
       });
+  
       onProductAdded();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Something went wrong.");
-      }
+    } catch (error) {
+      toast.error("❌ Error creating product!"); // Error toast
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
-
   const handleVariantChange = (
     index: number,
     field: keyof Variant,
@@ -263,15 +286,16 @@ export default function ProductForm({
 
         {/* Product Serial Number */}
         <input
-          type="text"
-          placeholder="Product Serial Number"
-          value={productData.productSerialNo}
-          onChange={(e) =>
-            setProductData({ ...productData, productSerialNo: e.target.value })
-          }
-          className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
-          required
-        />
+      type="text"
+      placeholder="Product Serial Number"
+      value={productData.productSerialNo}
+      onChange={handleSerialNumberChange}
+      className={`border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500 ${
+        serialNumberError ? "border-red-500" : ""
+      }`}
+      required
+    />
+    {serialNumberError && <p className="text-red-500 text-sm">{serialNumberError}</p>}
 
         {/* Purchase Price */}
         <input
@@ -373,15 +397,16 @@ export default function ProductForm({
                 <input
                   type="number"
                   placeholder="Quantity"
-                  value={variant.quantity}
-                  onChange={(e) =>
+                  value={variant.quantity === 0 ? "" : variant.quantity} // Allow empty input
+                  onChange={(e) => {
+                    const value = e.target.value;
                     handleVariantChange(
                       index,
                       "quantity",
-                      parseInt(e.target.value, 10)
-                    )
-                  }
-                  className="border p-2 rounded w-full"
+                      value === "" ? 0 : parseInt(value, 10) // Ensure always a number
+                    );
+                  }}
+                  className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
                   required
                 />
                 <input
@@ -404,12 +429,12 @@ export default function ProductForm({
           </div>
         )}
         <button
-          type="submit"
-          className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
-          disabled={loading}
-        >
-          {loading ? "Adding..." : "Add Product"}
-        </button>
+      type="submit"
+      className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
+      disabled={loading || serialNumberError !== null}
+    >
+      {loading ? "Adding..." : "Add Product"}
+    </button>
       </form>
     </div>
   );
