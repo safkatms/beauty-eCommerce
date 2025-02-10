@@ -33,10 +33,10 @@ model Product {
   subCategory      SubCategory     @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
   categoryId       Int
   category         Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  purchasePrice    Decimal         @db.Decimal(10,2)
-  sellingPrice     Decimal         @db.Decimal(10,2)
-  discount         Decimal?        @db.Decimal(5,2)
-  priceAfterDiscount Decimal?      @db.Decimal(10,2) @default(0)
+  purchasePrice    Float           // Changed from Decimal to Double (Float in Prisma)
+  sellingPrice     Float           // Changed from Decimal to Double
+  discount         Float?          // Changed from Decimal to Double
+  priceAfterDiscount Float?        @default(0) // Changed from Decimal to Double
   hasVariants      Boolean         @default(false)
   quantity         Int?            // Used only for non-variant products
   createdAt        DateTime        @default(now())
@@ -44,6 +44,7 @@ model Product {
   images           ProductImage[]  // Multiple images for the product
   variants         ProductVariant[] // Variants for products like Lipstick
 }
+
 
 model ProductImage {
   id        Int      @id @default(autoincrement())

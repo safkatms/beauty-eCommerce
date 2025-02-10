@@ -13,7 +13,6 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// API Route Handler for Product Creation
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -24,8 +23,8 @@ export async function POST(req: NextRequest) {
     const subCategoryId = formData.get("subCategoryId") as string;
     const name = formData.get("name") as string;
     const productSerialNo = formData.get("productSerialNo") as string;
-    const purchasePrice = parseFloat(formData.get("purchasePrice") as string);
-    const sellingPrice = parseFloat(formData.get("sellingPrice") as string);
+    const purchasePrice = parseFloat(formData.get("purchasePrice") as string) || 0;
+    const sellingPrice = parseFloat(formData.get("sellingPrice") as string) || 0;
     const hasVariants = formData.get("hasVariants") === "true";
     const quantity = formData.get("quantity") as string | null;
     const variantsData = formData.get("variants");
@@ -34,6 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    
     // Parse Variants (if exists)
     let variants = [];
     if (hasVariants && variantsData) {

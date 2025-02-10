@@ -28,8 +28,14 @@ export default function Products() {
         </button>
 
         {/* Show/Hide Create Form */}
-        {showCreateForm && <ProductCreate onProductAdded={() => setShowCreateForm(false)} />}
-
+        {showCreateForm && (
+                  <ProductCreate
+                    onProductAdded={() => {
+                      setShowCreateForm(false); // Hide after adding
+                      window.location.reload(); // Refresh table
+                    }}
+                  />
+                )}
         {/* Product List */}
         <ProductTable />
       </div>
