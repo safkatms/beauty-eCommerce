@@ -25,6 +25,8 @@ interface ProductData {
   productSerialNo: string;
   purchasePrice: number;
   sellingPrice: number;
+  hasVariants: boolean;
+  quantity?: number;
   images: File[];
   variants: Variant[];
 }
@@ -35,11 +37,7 @@ interface Variant {
   imageUrl?: string;
 }
 
-export default function ProductForm({
-  onProductAdded,
-}: {
-  onProductAdded: () => void;
-}) {
+export default function ProductForm({ onProductAdded }: { onProductAdded: () => void }) {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
@@ -52,14 +50,16 @@ export default function ProductForm({
     productSerialNo: "",
     purchasePrice: 0,
     sellingPrice: 0,
+    hasVariants: false,
+    quantity: undefined,
     images: [],
     variants: [],
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Fetch brands and categories
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -74,14 +74,11 @@ export default function ProductForm({
     fetchData();
   }, []);
 
-  // Fetch subcategories when category is selected
   useEffect(() => {
     if (selectedCategory !== null) {
       const fetchSubCategories = async () => {
         try {
-          const response = await fetch(
-            `/api/subCategories/${selectedCategory}`
-          );
+          const response = await fetch(`/api/subCategories/${selectedCategory}`);
           setSubCategories(await response.json());
         } catch (error) {
           console.error("Error fetching subcategories", error);
@@ -105,6 +102,11 @@ export default function ProductForm({
     formData.append("productSerialNo", productData.productSerialNo);
     formData.append("purchasePrice", productData.purchasePrice.toString());
     formData.append("sellingPrice", productData.sellingPrice.toString());
+    formData.append("hasVariants", JSON.stringify(productData.hasVariants));
+  
+    if (!productData.hasVariants && productData.quantity !== undefined) {
+      formData.append("quantity", productData.quantity.toString());
+    }
   
     // Append images
     productData.images.forEach((image) => {
@@ -112,7 +114,9 @@ export default function ProductForm({
     });
   
     // Append variants
-    formData.append("variants", JSON.stringify(productData.variants));
+    if (productData.hasVariants) {
+      formData.append("variants", JSON.stringify(productData.variants));
+    }
   
     try {
       const response = await fetch("/api/products", {
@@ -131,6 +135,8 @@ export default function ProductForm({
         productSerialNo: "",
         purchasePrice: 0,
         sellingPrice: 0,
+        hasVariants: false,
+        quantity: undefined,
         images: [],
         variants: [],
       });
@@ -147,19 +153,13 @@ export default function ProductForm({
   };
   
 
-  const handleVariantChange = (
-    index: number,
-    field: keyof Variant,
-    value: string | number | File
-  ) => {
+
+  const handleVariantChange = (index: number, field: keyof Variant, value: string | number | File) => {
     const updatedVariants = [...productData.variants];
     if (field === "imageUrl" && value instanceof File) {
       const reader = new FileReader();
       reader.onload = () => {
-        updatedVariants[index] = {
-          ...updatedVariants[index],
-          [field]: reader.result as string,
-        };
+        updatedVariants[index] = { ...updatedVariants[index], [field]: reader.result as string };
         setProductData({ ...productData, variants: updatedVariants });
       };
       reader.readAsDataURL(value);
@@ -172,35 +172,30 @@ export default function ProductForm({
   const addVariant = () => {
     setProductData({
       ...productData,
-      variants: [
-        ...productData.variants,
-        { shade: "", quantity: 0, imageUrl: "" },
-      ],
+      variants: [...productData.variants, { shade: "", quantity: 0, imageUrl: "" }],
     });
   };
-
+  
   return (
     <div className="bg-white shadow-lg p-4 rounded-lg mb-4">
       <h2 className="text-lg font-bold mb-2">Add a New Product</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        {/* Product Name, Brand, Category, etc. */}
+        {/* Product Name */}
         <input
           type="text"
           placeholder="Product Name"
           value={productData.name}
-          onChange={(e) =>
-            setProductData({ ...productData, name: e.target.value })
-          }
+          onChange={(e) => setProductData({ ...productData, name: e.target.value })}
           className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
           required
         />
 
+        {/* Brand Selection */}
         <select
           value={productData.brandId}
-          onChange={(e) =>
-            setProductData({ ...productData, brandId: e.target.value })
-          }
+          onChange={(e) => setProductData({ ...productData, brandId: e.target.value })}
           className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
+          required
         >
           <option value="">Select Brand</option>
           {brands.map((brand) => (
@@ -210,12 +205,13 @@ export default function ProductForm({
           ))}
         </select>
 
+        {/* Category Selection */}
         <select
           value={productData.categoryId}
           onChange={(e) => {
             const categoryId = e.target.value;
             setProductData({ ...productData, categoryId });
-            setSelectedCategory(parseInt(categoryId)); // Update selectedCategory for subcategory fetching
+            setSelectedCategory(parseInt(categoryId));
           }}
           className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
           required
@@ -228,13 +224,13 @@ export default function ProductForm({
           ))}
         </select>
 
+        {/* SubCategory Selection */}
         {productData.categoryId && (
           <select
             value={productData.subCategoryId}
-            onChange={(e) =>
-              setProductData({ ...productData, subCategoryId: e.target.value })
-            }
+            onChange={(e) => setProductData({ ...productData, subCategoryId: e.target.value })}
             className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
+            required
           >
             <option value="">Select Subcategory</option>
             {subCategories.map((subCategory) => (
@@ -244,129 +240,98 @@ export default function ProductForm({
             ))}
           </select>
         )}
+
+        {/* Product Serial Number */}
         <input
           type="text"
           placeholder="Product Serial Number"
           value={productData.productSerialNo}
-          onChange={(e) =>
-            setProductData({ ...productData, productSerialNo: e.target.value })
-          }
+          onChange={(e) => setProductData({ ...productData, productSerialNo: e.target.value })}
           className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
           required
         />
 
-<input
-  type="number"
-  placeholder="Purchase Price"
-  value={productData.purchasePrice || 0} // Ensure a number is provided, default to 0 if NaN
-  onChange={(e) =>
-    setProductData({
-      ...productData,
-      purchasePrice: isNaN(parseFloat(e.target.value)) ? 0 : parseFloat(e.target.value),
-    })
-  }
-  className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
-  required
-/>
-
-<input
-  type="number"
-  placeholder="Selling Price"
-  value={productData.sellingPrice || 0} // Ensure a number is provided, default to 0 if NaN
-  onChange={(e) =>
-    setProductData({
-      ...productData,
-      sellingPrice: isNaN(parseFloat(e.target.value)) ? 0 : parseFloat(e.target.value),
-    })
-  }
-  className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
-  required
-/>
-
-
-        {/* File Upload */}
+        {/* Purchase & Selling Price */}
         <input
-          type="file"
-          multiple
-          onChange={(e) =>
-            setProductData({
-              ...productData,
-              images: Array.from(e.target.files!),
-            })
-          }
+          type="number"
+          placeholder="Purchase Price"
+          value={productData.purchasePrice}
+          onChange={(e) => setProductData({ ...productData, purchasePrice: parseFloat(e.target.value) })}
           className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
+          required
         />
 
-        {/* Add variants */}
-        <div>
-          <h3 className="text-md font-bold mb-2">Variants</h3>
-          {productData.variants.map((variant, index) => (
-            <div key={index} className="flex flex-col gap-2 mb-4">
-              <input
-                type="text"
-                placeholder="Shade"
-                value={variant.shade}
-                onChange={(e) =>
-                  handleVariantChange(index, "shade", e.target.value)
-                }
-                className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
-                required
-              />
-              <input
-                type="number"
-                placeholder="Quantity"
-                value={variant.quantity}
-                onChange={(e) =>
-                  handleVariantChange(
-                    index,
-                    "quantity",
-                    parseInt(e.target.value, 10)
-                  )
-                }
-                className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
-                required
-              />
-              <input
-                type="file"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      handleVariantChange(
-                        index,
-                        "imageUrl",
-                        reader.result as string
-                      );
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
-                className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addVariant}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Add Variant
-          </button>
-        </div>
+        <input
+          type="number"
+          placeholder="Selling Price"
+          value={productData.sellingPrice}
+          onChange={(e) => setProductData({ ...productData, sellingPrice: parseFloat(e.target.value) })}
+          className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
+          required
+        />
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
-          disabled={loading}
-        >
+        {/* Images Upload */}
+        <input type="file" multiple onChange={(e) => setProductData({ ...productData, images: Array.from(e.target.files!) })} className="border p-2 rounded w-full" />
+         {/* Checkbox for Variants */}
+         <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={productData.hasVariants}
+            onChange={() => setProductData({ ...productData, hasVariants: !productData.hasVariants })}
+          />
+          This product has variants
+        </label>
+
+        {/* Single Quantity Field (if no variants) */}
+        {!productData.hasVariants && (
+          <input
+            type="number"
+            placeholder="Quantity"
+            value={productData.quantity || ""}
+            onChange={(e) => setProductData({ ...productData, quantity: parseInt(e.target.value, 10) || 0 })}
+            className="border p-2 rounded w-full"
+            required
+          />
+        )}
+
+        {/* Variant Section */}
+        {productData.hasVariants && (
+          <div>
+            <h3 className="text-md font-bold mb-2">Variants</h3>
+            {productData.variants.map((variant, index) => (
+              <div key={index} className="flex flex-col gap-2 mb-4 border p-2 rounded">
+                <input
+                  type="text"
+                  placeholder="Shade"
+                  value={variant.shade}
+                  onChange={(e) => handleVariantChange(index, "shade", e.target.value)}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+                <input
+                  type="number"
+                  placeholder="Quantity"
+                  value={variant.quantity}
+                  onChange={(e) => handleVariantChange(index, "quantity", parseInt(e.target.value, 10))}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+                <input
+                  type="file"
+                  onChange={(e) => e.target.files && handleVariantChange(index, "imageUrl", e.target.files[0])}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+            ))}
+            <button type="button" onClick={addVariant} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              Add Variant
+            </button>
+          </div>
+        )}
+        <button type="submit" className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600" disabled={loading}>
           {loading ? "Adding..." : "Add Product"}
         </button>
       </form>
-
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      {success && <p className="text-green-500 mt-2">{success}</p>}
     </div>
   );
 }

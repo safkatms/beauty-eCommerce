@@ -1,92 +1,123 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import multer from "multer";
-import fs from "fs";
 import path from "path";
-import { IncomingMessage } from "http";
+import fs from "fs";
 
-// Create a Prisma Client instance
 const prisma = new PrismaClient();
 
-// Setup multer storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+// Define the upload directory
+const uploadDir = path.join(process.cwd(), "public/uploads");
+
+// Ensure upload directory exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// API Route Handler for Product Creation
+export async function POST(req: NextRequest) {
+  try {
+    const formData = await req.formData();
+
+    // Extract Product Data
+    const brandId = formData.get("brandId") as string;
+    const categoryId = formData.get("categoryId") as string;
+    const subCategoryId = formData.get("subCategoryId") as string;
+    const name = formData.get("name") as string;
+    const productSerialNo = formData.get("productSerialNo") as string;
+    const purchasePrice = parseFloat(formData.get("purchasePrice") as string);
+    const sellingPrice = parseFloat(formData.get("sellingPrice") as string);
+    const hasVariants = formData.get("hasVariants") === "true";
+    const quantity = formData.get("quantity") as string | null;
+    const variantsData = formData.get("variants");
+
+    if (!brandId || !categoryId || !subCategoryId || !name || !productSerialNo || isNaN(purchasePrice) || isNaN(sellingPrice)) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const fileName = Date.now() + "-" + file.originalname;
-    cb(null, fileName);
-  },
-});
 
-// Initialize multer
-const upload = multer({ storage });
-
-const handleUpload = (req: IncomingMessage, res: NextApiResponse) => {
-  return new Promise<void>((resolve, reject) => {
-    upload.array("images", 5)(req, res, (err) => {
-      if (err instanceof Error) {
-        reject(err);
-      } else {
-        resolve();
+    // Parse Variants (if exists)
+    let variants = [];
+    if (hasVariants && variantsData) {
+      try {
+        variants = JSON.parse(variantsData as string);
+      } catch (error) {
+        console.error("Error parsing variants:", error);
+        return NextResponse.json({ error: "Invalid variants format" }, { status: 400 });
       }
-    });
-  });
-};
-
-// API Handler
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === "POST") {
-    try {
-      // First handle file upload
-      await handleUpload(req, res);
-
-      // Extract other form data from the body
-      const { brandId, categoryId, subCategoryId, name, productSerialNo, purchasePrice, sellingPrice, variants } = req.body;
-
-      // Map uploaded image files to their file paths
-      const images = req.files?.map((file: any) => ({
-        imageUrl: `/uploads/${file.filename}`,
-      }));
-
-      // Create the product with nested images and variants
-      const newProduct = await prisma.product.create({
-        data: {
-          brandId: parseInt(brandId, 10),
-          categoryId: parseInt(categoryId, 10),
-          subCategoryId: parseInt(subCategoryId, 10),
-          name,
-          productSerialNo,
-          purchasePrice: parseFloat(purchasePrice),
-          sellingPrice: parseFloat(sellingPrice),
-          images: {
-            create: images, // Insert image URLs into the database
-          },
-          variants: {
-            create: variants.map((variant: { shade: string; quantity: number; imageUrl?: string }) => ({
-              shade: variant.shade,
-              quantity: variant.quantity,
-              imageUrl: variant.imageUrl || null,
-            })),
-          },
-        },
-        include: {
-          images: true, // Include images in the response
-          variants: true, // Include variants in the response
-        },
-      });
-
-      res.status(201).json(newProduct);
-    } catch (error) {
-      console.error("Error creating product:", error);
-      res.status(500).json({ error: "Failed to create product" });
     }
-  } else {
-    // Handle unsupported HTTP methods
-    res.status(405).json({ error: "Method Not Allowed" });
+
+    // Create Product in Database
+    const newProduct = await prisma.product.create({
+      data: {
+        brandId: parseInt(brandId, 10),
+        categoryId: parseInt(categoryId, 10),
+        subCategoryId: parseInt(subCategoryId, 10),
+        name,
+        productSerialNo,
+        purchasePrice,
+        sellingPrice,
+        hasVariants,
+        quantity: hasVariants ? null : quantity ? parseInt(quantity, 10) : null,
+        variants: hasVariants ? { create: variants } : undefined,
+      },
+    });
+
+    // Handle Image Upload
+    const uploadedFiles = formData.getAll("images") as File[];
+    const imageUrls: string[] = [];
+
+    for (const file of uploadedFiles) {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const fileName = `${Date.now()}-${file.name}`;
+      const filePath = path.join(uploadDir, fileName);
+
+      fs.writeFileSync(filePath, buffer);
+      imageUrls.push(`/uploads/${fileName}`); // Store relative image path
+    }
+
+    // Save Image URLs to Database
+    if (imageUrls.length > 0) {
+      await prisma.productImage.createMany({
+        data: imageUrls.map((imageUrl) => ({
+          productId: newProduct.id,
+          imageUrl,
+        })),
+      });
+    }
+
+    return NextResponse.json(newProduct, { status: 201 });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
+  }
+}
+
+
+// 🚀 **GET: Fetch all products**
+export async function GET() {
+  try {
+    const products = await prisma.product.findMany({
+      include: {
+        brand: true,
+        category: true,
+        subCategory: true,
+        images: true, // Ensure images are included
+      },
+    });
+
+    // Fix image paths (Remove "/public" if present)
+    const updatedProducts = products.map((product) => ({
+      ...product,
+      images: product.images.map((image) => ({
+        imageUrl: image.imageUrl.startsWith("/uploads/")
+          ? image.imageUrl
+          : `/uploads/${image.imageUrl.split("/").pop()}`,
+      })),
+    }));
+
+    return NextResponse.json(updatedProducts);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
 }

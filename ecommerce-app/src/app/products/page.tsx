@@ -4,6 +4,7 @@ import { useState } from "react";
 import AdminSidebar from "@/components/sidebarAdmin";
 import { Plus, X } from "lucide-react";
 import ProductCreate from "@/components/productCreate";
+import ProductTable from "@/components/productTable";
 
 export default function Products() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -30,7 +31,7 @@ export default function Products() {
         {showCreateForm && <ProductCreate onProductAdded={() => setShowCreateForm(false)} />}
 
         {/* Product List */}
-        {/* <ProductTable /> */}
+        <ProductTable />
       </div>
     </div>
   );
