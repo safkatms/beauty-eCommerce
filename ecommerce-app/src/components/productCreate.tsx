@@ -343,42 +343,41 @@ export default function ProductForm({
           required
         />
 
+        {/* Images Upload with Preview */}
+        <div>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(e) => {
+              const files = Array.from(e.target.files!);
+              setProductData({
+                ...productData,
+                images: files,
+              });
 
-{/* Images Upload with Preview */}
-<div>
-  <input
-    type="file"
-    multiple
-    accept="image/*"
-    onChange={(e) => {
-      const files = Array.from(e.target.files!);
-      setProductData({
-        ...productData,
-        images: files,
-      });
-
-      // Generate preview URLs
-      const previews = files.map((file) => URL.createObjectURL(file));
-      setImagePreviews(previews);
-    }}
-    className="border p-2 rounded w-full"
-  />
-
-  {/* Preview Images */}
-  {imagePreviews.length > 0 && (
-    <div className="mt-4 grid grid-cols-3 gap-4">
-      {imagePreviews.map((src, index) => (
-        <div key={index} className="relative">
-          <img
-            src={src}
-            alt={`Preview ${index + 1}`}
-            className="w-24 h-24 object-cover rounded-lg border"
+              // Generate preview URLs
+              const previews = files.map((file) => URL.createObjectURL(file));
+              setImagePreviews(previews);
+            }}
+            className="border p-2 rounded w-full"
           />
+
+          {/* Preview Images */}
+          {imagePreviews.length > 0 && (
+            <div className="mt-4 grid grid-cols-3 gap-4">
+              {imagePreviews.map((src, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={src}
+                    alt={`Preview ${index + 1}`}
+                    className="w-24 h-24 object-cover rounded-lg border"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      ))}
-    </div>
-  )}
-</div>
 
         {/* Checkbox for Variants */}
         <label className="flex items-center gap-2">

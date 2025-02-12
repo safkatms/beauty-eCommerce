@@ -1,33 +1,57 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 export default function BrandCreate({ onBrandAdded }: { onBrandAdded: () => void }) {
   const [name, setName] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
+  // Handle Image Selection & Preview
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImage(file);
+      setPreview(URL.createObjectURL(file)); // Show image preview
+    }
+  };
+
+  // Handle Form Submission
   const handleAddBrand = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
 
-    const res = await fetch("/api/brands", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
+    const formData = new FormData();
+    formData.append("name", name);
+    if (image) {
+      formData.append("image", image);
+    }
 
-    const data = await res.json();
+    try {
+      const response = await fetch("/api/brands", {
+        method: "POST",
+        body: formData, // Send as FormData
+      });
 
-    if (res.ok) {
-      setSuccess("Brand added successfully!");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong.");
+      }
+
+      toast.success("✅ Brand added successfully!");
       setName("");
+      setImage(null);
+      setPreview(null);
       onBrandAdded(); // Refresh brand list after adding
-    } else {
-      setError(data.error || "Something went wrong.");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(`❌ ${error.message}`);
+      } else {
+        toast.error("❌ Something went wrong.");
+      }
     }
 
     setLoading(false);
@@ -36,7 +60,8 @@ export default function BrandCreate({ onBrandAdded }: { onBrandAdded: () => void
   return (
     <div className="bg-white shadow-lg p-4 rounded-lg mb-4">
       <h2 className="text-lg font-bold mb-2">Add a New Brand</h2>
-      <form onSubmit={handleAddBrand} className="flex gap-2">
+      <form onSubmit={handleAddBrand} className="flex flex-col gap-3">
+        {/* Brand Name Input */}
         <input
           type="text"
           value={name}
@@ -45,16 +70,24 @@ export default function BrandCreate({ onBrandAdded }: { onBrandAdded: () => void
           className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
           required
         />
+
+        {/* Image Upload */}
+        <input type="file" accept="image/*" onChange={handleImageChange} className="border p-2 rounded w-full" />
+
+        {/* Image Preview */}
+        {preview && (
+          <img src={preview} alt="Brand Preview" className="w-24 h-24 object-cover rounded-lg border mt-2" />
+        )}
+
+        {/* Submit Button */}
         <button
           type="submit"
           className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
           disabled={loading}
         >
-          {loading ? "Adding..." : "Add"}
+          {loading ? "Adding..." : "Add Brand"}
         </button>
       </form>
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      {success && <p className="text-green-500 mt-2">{success}</p>}
     </div>
   );
 }

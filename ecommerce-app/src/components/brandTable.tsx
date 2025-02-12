@@ -11,14 +11,15 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { motion } from "framer-motion";
-import { Trash2 } from "lucide-react"; // Import Lucide Trash icon
-import { toast, ToastContainer } from "react-toastify"; // Import toast from react-toastify
-import "react-toastify/dist/ReactToastify.css"; // Import toast styles
+import { Trash2 } from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
 
 interface Brand {
   id: string;
   name: string;
+  imageUrl?: string; // Ensure we have image support
 }
 
 const BrandTable = () => {
@@ -44,7 +45,6 @@ const BrandTable = () => {
   }, []);
 
   const handleDelete = async (id: string) => {
-    // Use SweetAlert2 for confirmation
     const result = await Swal.fire({
       title: "Are you sure?",
       text: "This action cannot be undone!",
@@ -62,14 +62,35 @@ const BrandTable = () => {
         if (!response.ok) throw new Error("Failed to delete brand");
 
         setBrands((prev) => prev.filter((brand) => brand.id !== id));
-        toast.success("Brand deleted successfully!");
+        toast.success("✅ Brand deleted successfully!");
       } catch (error) {
-        toast.error("Error deleting brand");
+        toast.error("❌ Error deleting brand");
       }
     }
   };
 
   const columns: ColumnDef<Brand>[] = [
+    {
+      accessorKey: "imageUrl",
+      header: "Image",
+      cell: ({ row }) => (
+        <div className="w-16 h-16 flex items-center justify-center">
+          {row.original.imageUrl ? (
+            <img
+              src={row.original.imageUrl}
+              alt="Brand"
+              className="w-full h-full object-cover rounded-lg border"
+            />
+          ) : (
+            <img
+              src="/no-image.png" // Make sure you have this image in the public folder
+              alt="No Image"
+              className="w-full h-full object-cover rounded-lg border bg-gray-200"
+            />
+          )}
+        </div>
+      ),
+    },    
     { accessorKey: "id", header: "ID", sortingFn: "alphanumeric" },
     { accessorKey: "name", header: "Brand Name", sortingFn: "text" },
     {
@@ -116,6 +137,8 @@ const BrandTable = () => {
 
   return (
     <div className="p-6 bg-white shadow-md rounded-lg">
+      <ToastContainer /> {/* Toast notifications */}
+
       <h2 className="text-3xl font-bold mb-6 text-gray-800">Brand List</h2>
 
       <div className="mb-4">

@@ -65,8 +65,9 @@ model ProductVariant {
 
 // Brand Model
 model Brand {
-  id   Int  @id @default(autoincrement())
-  name String  @unique
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  imageUrl String? // Optional field to store image path
   products Product[]
 
   @@index([name])
