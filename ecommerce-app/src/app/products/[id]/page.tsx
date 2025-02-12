@@ -11,8 +11,11 @@ import {
   Pencil,
   Save,
   SeparatorVertical,
+  Trash2,
   XCircle,
 } from "lucide-react";
+import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 
 interface Product {
   id: number;
@@ -114,7 +117,6 @@ export default function UpdateProduct() {
   };
 
   const handleSaveChanges = async () => {
-    setSaving(true);
     try {
       const response = await fetch(`/api/products/${productId}`, {
         method: "PUT",
@@ -122,14 +124,43 @@ export default function UpdateProduct() {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error("Failed to update product");
+      if (!response.ok) {
+        throw new Error("Failed to update product");
+      }
 
-      setIsEditing(false);
+      toast.success("Product updated successfully!");
       router.push(`/products/${productId}`);
     } catch (error) {
-      setError("Error updating product");
-    } finally {
-      setSaving(false);
+      toast.error("Error updating product");
+    }
+  };
+
+  const handleDelete = async () => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This action cannot be undone!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`/api/products/${productId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) throw new Error("Failed to delete product");
+
+        toast.success("Product deleted successfully!");
+        setTimeout(() => {
+          router.push("/products"); // Redirect after delete
+        }, 2000);
+      } catch (error) {
+        toast.error("Error deleting product");
+      }
     }
   };
 
@@ -160,28 +191,44 @@ export default function UpdateProduct() {
         >
           <ArrowLeft className="w-5 h-5" /> Back to Products
         </button>
-        <h1 className="text-2xl font-bold mb-4">
-          {isEditing ? "Edit Product" : "Product Details"}
-        </h1>
 
-        <button
-          onClick={() => setIsEditing((prev) => !prev)}
-          className={`mb-4 px-4 py-2 rounded-lg transition flex items-center gap-2 ${
-            isEditing
-              ? "bg-gray-500 text-white"
-              : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
-        >
-          {isEditing ? (
-            <>
-              <XCircle className="w-5 h-5" /> Disable Edit
-            </>
-          ) : (
-            <>
-              <Pencil className="w-5 h-5" /> Enable Edit
-            </>
-          )}
-        </button>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">
+            {isEditing ? "Edit Product" : "Product Details"}
+          </h1>
+
+          {/* Button Group: Edit & Delete */}
+          <div className="flex gap-2">
+            {/* Toggle Edit Button */}
+            <button
+              onClick={() => setIsEditing((prev) => !prev)}
+              className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                isEditing
+                  ? "bg-gray-500 text-white"
+                  : "bg-blue-500 text-white hover:bg-blue-600"
+              }`}
+            >
+              {isEditing ? (
+                <>
+                  <XCircle className="w-5 h-5" /> Disable Edit
+                </>
+              ) : (
+                <>
+                  <Pencil className="w-5 h-5" /> Enable Edit
+                </>
+              )}
+            </button>
+
+            {/* Delete Button */}
+            <button
+              onClick={handleDelete}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 flex items-center gap-2"
+            >
+              <Trash2 size={18} />
+              Delete Product
+            </button>
+          </div>
+        </div>
 
         {/* Product Category, Subcategory & Brand */}
         <div className="mb-4 p-4 bg-gray-100 rounded-lg text-lg font-semibold flex items-center gap-2">
@@ -268,7 +315,7 @@ export default function UpdateProduct() {
             <input
               type="number"
               name="discount"
-              value={formData.discount || 0}
+              value={formData.discount || ""}
               onChange={handleChange}
               className="border p-2 rounded w-full"
               disabled={!isEditing}
@@ -316,7 +363,7 @@ export default function UpdateProduct() {
                   <label>Quantity</label>
                   <input
                     type="number"
-                    value={variant.quantity}
+                    value={variant.quantity || ""}
                     onChange={(e) =>
                       handleVariantChange(
                         index,
@@ -327,7 +374,6 @@ export default function UpdateProduct() {
                     className="border p-2 rounded w-full"
                     disabled={!isEditing}
                   />
-
                   <label>Image</label>
                   {variant.imageUrl && (
                     <img
