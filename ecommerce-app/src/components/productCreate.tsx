@@ -65,31 +65,35 @@ export default function ProductForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [serialNumberError, setSerialNumberError] = useState<string | null>(null);
+  const [serialNumberError, setSerialNumberError] = useState<string | null>(
+    null
+  );
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const checkSerialNumberUnique = async (serialNo: string) => {
+    if (!serialNo) return;
 
-const checkSerialNumberUnique = async (serialNo: string) => {
-  if (!serialNo) return;
+    try {
+      const response = await fetch(
+        `/api/products/checkSerial?serialNo=${serialNo}`
+      );
+      const data = await response.json();
 
-  try {
-    const response = await fetch(`/api/products/checkSerial?serialNo=${serialNo}`);
-    const data = await response.json();
-
-    if (data.exists) {
-      setSerialNumberError("This serial number is already in use.");
-    } else {
-      setSerialNumberError(null);
+      if (data.exists) {
+        setSerialNumberError("This serial number is already in use.");
+      } else {
+        setSerialNumberError(null);
+      }
+    } catch (error) {
+      console.error("Error checking serial number:", error);
+      setSerialNumberError("Error checking serial number.");
     }
-  } catch (error) {
-    console.error("Error checking serial number:", error);
-    setSerialNumberError("Error checking serial number.");
-  }
-};
+  };
 
-const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const serialNo = e.target.value;
-  setProductData({ ...productData, productSerialNo: serialNo });
-  checkSerialNumberUnique(serialNo);
-};
+  const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const serialNo = e.target.value;
+    setProductData({ ...productData, productSerialNo: serialNo });
+    checkSerialNumberUnique(serialNo);
+  };
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -125,7 +129,7 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLoading(true);
     setError("");
     setSuccess("");
-  
+
     const formData = new FormData();
     formData.append("brandId", productData.brandId);
     formData.append("categoryId", productData.categoryId);
@@ -135,31 +139,31 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     formData.append("purchasePrice", productData.purchasePrice.toString());
     formData.append("sellingPrice", productData.sellingPrice.toString());
     formData.append("hasVariants", JSON.stringify(productData.hasVariants));
-  
+
     if (!productData.hasVariants && productData.quantity !== undefined) {
       formData.append("quantity", productData.quantity.toString());
     }
-  
+
     // Append images
     productData.images.forEach((image) => {
       formData.append("images", image);
     });
-  
+
     // Append variants
     if (productData.hasVariants) {
       formData.append("variants", JSON.stringify(productData.variants));
     }
-  
+
     try {
       const response = await fetch("/api/products", {
         method: "POST",
         body: formData,
       });
-  
+
       if (!response.ok) throw new Error("Failed to create product");
-  
+
       toast.success("✅ Product added successfully!"); // Success toast
-  
+
       setProductData({
         brandId: "",
         categoryId: "",
@@ -173,7 +177,7 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         images: [],
         variants: [],
       });
-  
+
       onProductAdded();
     } catch (error) {
       toast.error("❌ Error creating product!"); // Error toast
@@ -211,6 +215,12 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         { shade: "", quantity: 0, imageUrl: "" },
       ],
     });
+  };
+  const removeVariant = (index: number) => {
+    setProductData((prevData) => ({
+      ...prevData,
+      variants: prevData.variants.filter((_, i) => i !== index),
+    }));
   };
 
   return (
@@ -286,16 +296,18 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
         {/* Product Serial Number */}
         <input
-      type="text"
-      placeholder="Product Serial Number"
-      value={productData.productSerialNo}
-      onChange={handleSerialNumberChange}
-      className={`border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500 ${
-        serialNumberError ? "border-red-500" : ""
-      }`}
-      required
-    />
-    {serialNumberError && <p className="text-red-500 text-sm">{serialNumberError}</p>}
+          type="text"
+          placeholder="Product Serial Number"
+          value={productData.productSerialNo}
+          onChange={handleSerialNumberChange}
+          className={`border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500 ${
+            serialNumberError ? "border-red-500" : ""
+          }`}
+          required
+        />
+        {serialNumberError && (
+          <p className="text-red-500 text-sm">{serialNumberError}</p>
+        )}
 
         {/* Purchase Price */}
         <input
@@ -331,18 +343,43 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           required
         />
 
-        {/* Images Upload */}
-        <input
-          type="file"
-          multiple
-          onChange={(e) =>
-            setProductData({
-              ...productData,
-              images: Array.from(e.target.files!),
-            })
-          }
-          className="border p-2 rounded w-full"
-        />
+
+{/* Images Upload with Preview */}
+<div>
+  <input
+    type="file"
+    multiple
+    accept="image/*"
+    onChange={(e) => {
+      const files = Array.from(e.target.files!);
+      setProductData({
+        ...productData,
+        images: files,
+      });
+
+      // Generate preview URLs
+      const previews = files.map((file) => URL.createObjectURL(file));
+      setImagePreviews(previews);
+    }}
+    className="border p-2 rounded w-full"
+  />
+
+  {/* Preview Images */}
+  {imagePreviews.length > 0 && (
+    <div className="mt-4 grid grid-cols-3 gap-4">
+      {imagePreviews.map((src, index) => (
+        <div key={index} className="relative">
+          <img
+            src={src}
+            alt={`Preview ${index + 1}`}
+            className="w-24 h-24 object-cover rounded-lg border"
+          />
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
         {/* Checkbox for Variants */}
         <label className="flex items-center gap-2">
           <input
@@ -382,8 +419,9 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             {productData.variants.map((variant, index) => (
               <div
                 key={index}
-                className="flex flex-col gap-2 mb-4 border p-2 rounded"
+                className="flex flex-col gap-2 mb-4 border p-2 rounded relative"
               >
+                {/* Shade Input */}
                 <input
                   type="text"
                   placeholder="Shade"
@@ -391,9 +429,11 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   onChange={(e) =>
                     handleVariantChange(index, "shade", e.target.value)
                   }
-                  className="border p-2 rounded w-full"
+                  className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
                   required
                 />
+
+                {/* Quantity Input */}
                 <input
                   type="number"
                   placeholder="Quantity"
@@ -409,16 +449,39 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
                   required
                 />
+
+                {/* Variant Image Preview */}
+                {variant.imageUrl && typeof variant.imageUrl === "string" && (
+                  <img
+                    src={variant.imageUrl}
+                    alt={`Variant ${index + 1}`}
+                    className="w-24 h-24 object-cover rounded-lg border"
+                  />
+                )}
+
+                {/* Image Upload */}
                 <input
                   type="file"
-                  onChange={(e) =>
-                    e.target.files &&
-                    handleVariantChange(index, "imageUrl", e.target.files[0])
-                  }
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleVariantChange(index, "imageUrl", e.target.files[0]);
+                    }
+                  }}
                   className="border p-2 rounded w-full"
                 />
+
+                {/* Remove Variant Button */}
+                <button
+                  type="button"
+                  onClick={() => removeVariant(index)}
+                  className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                >
+                  ✕ Remove
+                </button>
               </div>
             ))}
+
+            {/* Add Variant Button */}
             <button
               type="button"
               onClick={addVariant}
@@ -428,13 +491,14 @@ const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             </button>
           </div>
         )}
+
         <button
-      type="submit"
-      className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
-      disabled={loading || serialNumberError !== null}
-    >
-      {loading ? "Adding..." : "Add Product"}
-    </button>
+          type="submit"
+          className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
+          disabled={loading || serialNumberError !== null}
+        >
+          {loading ? "Adding..." : "Add Product"}
+        </button>
       </form>
     </div>
   );
