@@ -7,21 +7,64 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// User Model
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(CUSTOMER)
-  createdAt DateTime @default(now())
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  password     String
+  role         Role      @default(CUSTOMER)
+  phone        String?   // Optional phone number
+  profileImage String?   // URL to profile picture
+  status       UserStatus @default(ACTIVE) // Account status
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relationships
+  addresses         Address[]         // User's addresses
+  reviews           Review[]          // User's reviews
+  questionsAndAnswers QuestionAnswer[] // User's questions and answers
+  orders            Order[]           // User's orders
+
+  @@index([email])
 }
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  street     String
+  city       String
+  state      String
+  zipCode    String
+  country    String
+  addressType AddressType @default(HOME) // Home, Work, etc.
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
 
 // Role Enum
 enum Role {
   ADMIN
   CUSTOMER
 }
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AddressType {
+  HOME
+  WORK
+  BILLING
+  SHIPPING
+  OTHER
+}
+
 
 model Product {
   id               Int             @id @default(autoincrement())
@@ -33,16 +76,88 @@ model Product {
   subCategory      SubCategory     @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
   categoryId       Int
   category         Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  purchasePrice    Float           // Changed from Decimal to Double (Float in Prisma)
-  sellingPrice     Float           // Changed from Decimal to Double
-  discount         Float?          // Changed from Decimal to Double
-  priceAfterDiscount Float?        @default(0) // Changed from Decimal to Double
+  purchasePrice    Float
+  sellingPrice     Float
+  discount         Float?
+  priceAfterDiscount Float?        @default(0)
   hasVariants      Boolean         @default(false)
   quantity         Int?            // Used only for non-variant products
+  description      String?         // Product description
+  ingredients      String?         // Ingredients if applicable
+  totalSold        Int             @default(0) // New field to track sales count
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
-  images           ProductImage[]  // Multiple images for the product
-  variants         ProductVariant[] // Variants for products like Lipstick
+
+  images           ProductImage[]
+  variants         ProductVariant[]
+  reviews          Review[]
+  questionsAndAnswers QuestionAnswer[]
+  orderItems       OrderItem[]
+
+  @@index([productSerialNo])
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalAmount Float
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems  OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity   Int
+  price      Float
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELED
+}
+
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating     Int      // Rating from 1 to 5
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId])
+}
+
+model QuestionAnswer {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   String
+  answer     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId])
 }
 
 
@@ -75,21 +190,24 @@ model Brand {
 
 // Category Model
 model Category {
-  id   Int @id @default(autoincrement())
-  name String @unique
+  id            Int    @id @default(autoincrement())
+  name          String @unique
+  imageUrl      String? // Add image URL field
   subCategories SubCategory[]
-  products Product[]
+  products      Product[]
 
   @@index([name])
 }
 
+
 // SubCategory Model
 model SubCategory {
-  id         Int @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   name       String @unique
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   products   Product[]
+  imageUrl   String?  // New field for storing Cloudinary URL
 
   @@index([name])
 }

@@ -1,12 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 export default function CategoryCreate({ onCategoryAdded }: { onCategoryAdded: () => void }) {
   const [name, setName] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Handle Image Change & Preview
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImage(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,20 +26,35 @@ export default function CategoryCreate({ onCategoryAdded }: { onCategoryAdded: (
     setError("");
     setSuccess("");
 
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
+    const formData = new FormData();
+    formData.append("name", name);
+    if (image) {
+      formData.append("image", image);
+    }
 
-    const data = await res.json();
+    try {
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (res.ok) {
-      setSuccess("Category added successfully!");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong.");
+      }
+
+      toast.success("✅ Category added successfully!");
       setName("");
-      onCategoryAdded(); // Refresh category list after adding
-    } else {
-      setError(data.error || "Something went wrong.");
+      setImage(null);
+      setPreview(null);
+      onCategoryAdded();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(`❌ ${error.message}`);
+      } else {
+        toast.error("❌ Something went wrong.");
+      }
     }
 
     setLoading(false);
@@ -36,7 +63,8 @@ export default function CategoryCreate({ onCategoryAdded }: { onCategoryAdded: (
   return (
     <div className="bg-white shadow-lg p-4 rounded-lg mb-4">
       <h2 className="text-lg font-bold mb-2">Add a New Category</h2>
-      <form onSubmit={handleAddCategory} className="flex gap-2">
+      <form onSubmit={handleAddCategory} className="flex flex-col gap-3">
+        {/* Category Name */}
         <input
           type="text"
           value={name}
@@ -45,16 +73,31 @@ export default function CategoryCreate({ onCategoryAdded }: { onCategoryAdded: (
           className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
           required
         />
+
+        {/* Image Upload */}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+          className="border p-2 rounded w-full"
+        />
+
+        {/* Image Preview */}
+        {preview && (
+          <div className="mt-2">
+            <img src={preview} alt="Category Preview" className="w-32 h-32 object-cover rounded-lg border" />
+          </div>
+        )}
+
+        {/* Submit Button */}
         <button
           type="submit"
           className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
           disabled={loading}
         >
-          {loading ? "Adding..." : "Add"}
+          {loading ? "Adding..." : "Add Category"}
         </button>
       </form>
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      {success && <p className="text-green-500 mt-2">{success}</p>}
     </div>
   );
 }

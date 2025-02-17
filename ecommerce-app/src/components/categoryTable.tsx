@@ -12,13 +12,14 @@ import {
 } from "@tanstack/react-table";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
 
 interface Category {
   id: string;
   name: string;
+  imageUrl?: string;
 }
 
 const CategoryTable = () => {
@@ -70,7 +71,29 @@ const CategoryTable = () => {
 
   const columns: ColumnDef<Category>[] = [
     { accessorKey: "id", header: "ID", sortingFn: "alphanumeric" },
+    {
+      accessorKey: "imageUrl",
+      header: "Image",
+      cell: ({ row }) => (
+        <div className="w-20 h-20 flex items-center justify-center">
+          {row.original.imageUrl ? (
+            <img
+              src={row.original.imageUrl}
+              alt="Category"
+              className="w-full h-full object-cover rounded-lg border"
+            />
+          ) :(
+            <img
+              src="/no-image.png"
+              alt="No Image"
+              className="w-full h-full object-cover rounded-lg border bg-gray-200"
+            />
+          )}
+        </div>
+      ),
+    },
     { accessorKey: "name", header: "Category Name", sortingFn: "text" },
+   
     {
       id: "actions",
       header: "Actions",

@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import path from "path";
-import fs from "fs";
+import cloudinary from "cloudinary";
 
 const prisma = new PrismaClient();
 
-// Define the upload directory
-const uploadDir = path.join(process.cwd(), "public/uploads");
-
-// Ensure upload directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Configure Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
 
-    // Extract Product Data
+    // Extract product data
     const brandId = formData.get("brandId") as string;
     const categoryId = formData.get("categoryId") as string;
     const subCategoryId = formData.get("subCategoryId") as string;
@@ -27,25 +25,26 @@ export async function POST(req: NextRequest) {
     const sellingPrice = parseFloat(formData.get("sellingPrice") as string) || 0;
     const hasVariants = formData.get("hasVariants") === "true";
     const quantity = formData.get("quantity") as string | null;
+    const ingredients = formData.get("ingredients") as string;
+    const description = formData.get("description") as string;
     const variantsData = formData.get("variants");
 
-    if (!brandId || !categoryId || !subCategoryId || !name || !productSerialNo || isNaN(purchasePrice) || isNaN(sellingPrice)) {
+    // Validate required fields
+    if (!brandId || !categoryId || !subCategoryId || !name || !productSerialNo || !ingredients || !description) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    
-    // Parse Variants (if exists)
+    // Parse variants if provided
     let variants = [];
     if (hasVariants && variantsData) {
       try {
         variants = JSON.parse(variantsData as string);
       } catch (error) {
-        console.error("Error parsing variants:", error);
         return NextResponse.json({ error: "Invalid variants format" }, { status: 400 });
       }
     }
 
-    // Create Product in Database
+    // Create product in database
     const newProduct = await prisma.product.create({
       data: {
         brandId: parseInt(brandId, 10),
@@ -55,33 +54,82 @@ export async function POST(req: NextRequest) {
         productSerialNo,
         purchasePrice,
         sellingPrice,
+        ingredients,
+        description,
         hasVariants,
         quantity: hasVariants ? null : quantity ? parseInt(quantity, 10) : null,
-        variants: hasVariants ? { create: variants } : undefined,
       },
     });
 
-    // Handle Image Upload
+    // Upload product images to Cloudinary
     const uploadedFiles = formData.getAll("images") as File[];
     const imageUrls: string[] = [];
 
     for (const file of uploadedFiles) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const fileName = `${Date.now()}-${file.name}`;
-      const filePath = path.join(uploadDir, fileName);
 
-      fs.writeFileSync(filePath, buffer);
-      imageUrls.push(`/uploads/${fileName}`); // Store relative image path
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.v2.uploader.upload_stream(
+          { folder: "ecommerce_products" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        ).end(buffer);
+      });
+
+      const cloudinaryResult = uploadResult as cloudinary.UploadApiResponse;
+      imageUrls.push(cloudinaryResult.secure_url);
     }
 
-    // Save Image URLs to Database
+    // Save product images
     if (imageUrls.length > 0) {
       await prisma.productImage.createMany({
-        data: imageUrls.map((imageUrl) => ({
+        data: imageUrls.map((url) => ({
           productId: newProduct.id,
-          imageUrl,
+          imageUrl: url,
         })),
+      });
+    }
+
+    // Upload variant images if present
+    if (hasVariants && variants.length > 0) {
+      const variantEntries = [];
+
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        let variantImageUrl = null;
+
+        const file = formData.get(`variantImage-${i}`) as File;
+        if (file) {
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+
+          const uploadResult = await new Promise((resolve, reject) => {
+            cloudinary.v2.uploader.upload_stream(
+              { folder: "ecommerce_products/variants" },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
+
+          const cloudinaryResult = uploadResult as cloudinary.UploadApiResponse;
+          variantImageUrl = cloudinaryResult.secure_url;
+        }
+
+        variantEntries.push({
+          productId: newProduct.id,
+          shade: variant.shade,
+          quantity: variant.quantity,
+          imageUrl: variantImageUrl,
+        });
+      }
+
+      await prisma.productVariant.createMany({
+        data: variantEntries,
       });
     }
 
@@ -92,8 +140,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-
-// 🚀 **GET: Fetch all products**
+// 🚀 **GET: Fetch All Products**
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
@@ -101,21 +148,12 @@ export async function GET() {
         brand: true,
         category: true,
         subCategory: true,
-        images: true, // Ensure images are included
+        images: true,
+        variants: true,
       },
     });
 
-    // Fix image paths (Remove "/public" if present)
-    const updatedProducts = products.map((product) => ({
-      ...product,
-      images: product.images.map((image) => ({
-        imageUrl: image.imageUrl.startsWith("/uploads/")
-          ? image.imageUrl
-          : `/uploads/${image.imageUrl.split("/").pop()}`,
-      })),
-    }));
-
-    return NextResponse.json(updatedProducts);
+    return NextResponse.json(products);
   } catch (error) {
     console.error("Error fetching products:", error);
     return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });

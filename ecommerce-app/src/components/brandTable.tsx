@@ -62,14 +62,16 @@ const BrandTable = () => {
         if (!response.ok) throw new Error("Failed to delete brand");
 
         setBrands((prev) => prev.filter((brand) => brand.id !== id));
-        toast.success("✅ Brand deleted successfully!");
+        toast.success("Brand deleted successfully!");
       } catch (error) {
-        toast.error("❌ Error deleting brand");
+        toast.error("Error deleting brand");
       }
     }
   };
 
   const columns: ColumnDef<Brand>[] = [
+        
+    { accessorKey: "id", header: "ID", sortingFn: "alphanumeric" },
     {
       accessorKey: "imageUrl",
       header: "Image",
@@ -90,8 +92,7 @@ const BrandTable = () => {
           )}
         </div>
       ),
-    },    
-    { accessorKey: "id", header: "ID", sortingFn: "alphanumeric" },
+    },
     { accessorKey: "name", header: "Brand Name", sortingFn: "text" },
     {
       id: "actions",

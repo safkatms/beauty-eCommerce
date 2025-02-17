@@ -23,7 +23,7 @@ interface Category {
 interface SubCategory {
   id: string;
   name: string;
-  categoryId: string;  // Link the subcategory to a category
+  categoryId: string; // Link the subcategory to a category
 }
 
 const SubCategoryTable = () => {
@@ -66,11 +66,15 @@ const SubCategoryTable = () => {
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`/api/subCategories/delete/${id}`, { method: "DELETE" });
+        const response = await fetch(`/api/subCategories/delete/${id}`, {
+          method: "DELETE",
+        });
 
         if (!response.ok) throw new Error("Failed to delete subcategory");
 
-        setSubCategories((prev) => prev.filter((subCategory) => subCategory.id !== id));
+        setSubCategories((prev) =>
+          prev.filter((subCategory) => subCategory.id !== id)
+        );
         toast.success("Subcategory deleted successfully!");
       } catch (error) {
         toast.error("Error deleting subcategory");
@@ -80,15 +84,39 @@ const SubCategoryTable = () => {
 
   const columns: ColumnDef<SubCategory>[] = [
     { accessorKey: "id", header: "ID", sortingFn: "alphanumeric" },
+    {
+      accessorKey: "imageUrl",
+      header: "Image",
+      cell: ({ row }) => (
+        <div className="w-20 h-20 flex items-center justify-center">
+          {row.original.imageUrl ? (
+            <img
+              src={row.original.imageUrl}
+              alt="SubCategory"
+              className="w-full h-full object-cover rounded-lg border"
+            />
+          ) : (
+            <img
+              src="/no-image.png" // Make sure you have this image in the public folder
+              alt="No Image"
+              className="w-full h-full object-cover rounded-lg border bg-gray-200"
+            />
+          )}
+        </div>
+      ),
+    },
     { accessorKey: "name", header: "SubCategory Name", sortingFn: "text" },
     {
-      accessorKey: "categoryId", 
-      header: "Category", 
+      accessorKey: "categoryId",
+      header: "Category",
       cell: ({ row }) => {
-        const category = categories.find(cat => cat.id === row.original.categoryId);
+        const category = categories.find(
+          (cat) => cat.id === row.original.categoryId
+        );
         return category ? category.name : "Unknown";
-      }
+      },
     },
+    
     {
       id: "actions",
       header: "Actions",
@@ -133,7 +161,9 @@ const SubCategoryTable = () => {
 
   return (
     <div className="p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Sub-Category List</h2>
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">
+        Sub-Category List
+      </h2>
 
       <div className="mb-4">
         <input
@@ -156,7 +186,10 @@ const SubCategoryTable = () => {
                     className="p-3 text-left cursor-pointer hover:bg-pink-700 transition-all"
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    {flexRender(header.column.columnDef.header, header.getContext())}
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
                     {header.column.getIsSorted() === "asc"
                       ? " 🔼"
                       : header.column.getIsSorted() === "desc"
@@ -170,17 +203,26 @@ const SubCategoryTable = () => {
           <tbody className="bg-white">
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="border-b hover:bg-gray-100 transition">
+                <tr
+                  key={row.id}
+                  className="border-b hover:bg-gray-100 transition"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="p-3 border">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </td>
                   ))}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="text-center p-4 text-gray-500">
+                <td
+                  colSpan={columns.length}
+                  className="text-center p-4 text-gray-500"
+                >
                   No subcategories found.
                 </td>
               </tr>
@@ -190,10 +232,18 @@ const SubCategoryTable = () => {
       </div>
 
       <div className="flex justify-between items-center mt-6">
-        <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg disabled:opacity-50">
+        <button
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+          className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+        >
           Previous
         </button>
-        <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg disabled:opacity-50">
+        <button
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+          className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+        >
           Next
         </button>
       </div>

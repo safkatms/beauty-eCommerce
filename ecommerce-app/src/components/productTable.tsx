@@ -51,7 +51,7 @@ const ProductTable = () => {
   const columns: ColumnDef<Product>[] = [
     { accessorKey: "id", header: "ID", sortingFn: "alphanumeric" },
     {
-      accessorKey: "images",
+      accessorKey: "imageUrl",
       header: "Image",
       cell: ({ row }) => {
         const productImages = row.original.images || [];
