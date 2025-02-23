@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
             },
         });
 
-        // Fetch paginated products
+        // Fetch products with pre-calculated average rating
         const products = await prisma.product.findMany({
             where: {
                 OR: [
@@ -40,13 +40,24 @@ export async function GET(req: NextRequest) {
                 category: true,
                 subCategory: true,
                 images: true,
+                _count: { select: { reviews: true } }, // Count total reviews
+                reviews: { select: { rating: true } }, // Fetch all ratings
             },
             take: limit,
             skip: (page - 1) * limit,
         });
 
+        // Attach average rating directly in the response
+        const productsWithRatings = products.map((product) => ({
+            ...product,
+            avgRating: product.reviews.length
+                ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+                : 0, // If no reviews, return 0
+            totalReviews: product._count.reviews, // Include total number of reviews
+        }));
+
         return NextResponse.json({
-            products,
+            products: productsWithRatings,
             totalPages: Math.ceil(totalProducts / limit),
             currentPage: page,
         });
