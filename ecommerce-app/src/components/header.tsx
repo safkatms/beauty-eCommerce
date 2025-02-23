@@ -21,11 +21,21 @@ const Header = () => {
 
         {/* Navigation (Desktop) */}
         <nav className="hidden md:flex space-x-6 font-medium">
-          <a href="#" className="hover:text-pink-600">Shop</a>
-          <a href="#" className="hover:text-pink-600">Skincare</a>
-          <a href="#" className="hover:text-pink-600">Makeup</a>
-          <a href="#" className="hover:text-pink-600">Haircare</a>
-          <a href="#" className="hover:text-pink-600">Offers</a>
+          <a href="#" className="hover:text-pink-600">
+            Shop
+          </a>
+          <a href="#" className="hover:text-pink-600">
+            Skincare
+          </a>
+          <a href="#" className="hover:text-pink-600">
+            Makeup
+          </a>
+          <a href="#" className="hover:text-pink-600">
+            Haircare
+          </a>
+          <a href="#" className="hover:text-pink-600">
+            Offers
+          </a>
         </nav>
 
         {/* Search Bar */}
@@ -40,17 +50,29 @@ const Header = () => {
 
         {/* Icons */}
         <div className="flex items-center space-x-4">
-          <Heart size={24} className="cursor-pointer text-gray-600 hover:text-pink-600" />
-          <ShoppingBag size={24} className="cursor-pointer text-gray-600 hover:text-pink-600" />
+          <Heart
+            size={24}
+            className="cursor-pointer text-gray-600 hover:text-pink-600"
+          />
+          <ShoppingBag
+            size={24}
+            className="cursor-pointer text-gray-600 hover:text-pink-600"
+          />
 
           {/* Profile or Login Button */}
           {user ? (
             <div className="relative">
-              <User size={24} className="cursor-pointer text-gray-600 hover:text-pink-600" />
+              <User
+                size={24}
+                className="cursor-pointer text-gray-600 hover:text-pink-600"
+              />
               {/* Profile Menu Dropdown (if needed) */}
             </div>
           ) : (
-            <a href="/login" className="px-4 py-2 bg-pink-600 text-white rounded-full hover:bg-pink-700">
+            <a
+              href="/login"
+              className="px-4 py-2 bg-pink-600 text-white rounded-full hover:bg-pink-700"
+            >
               Login
             </a>
           )}
@@ -65,11 +87,21 @@ const Header = () => {
       {/* Mobile Navigation Menu */}
       {menuOpen && (
         <div className="md:hidden bg-white shadow-md p-4 flex flex-col space-y-3">
-          <a href="#" className="hover:text-pink-600">Shop</a>
-          <a href="#" className="hover:text-pink-600">Skincare</a>
-          <a href="#" className="hover:text-pink-600">Makeup</a>
-          <a href="#" className="hover:text-pink-600">Haircare</a>
-          <a href="#" className="hover:text-pink-600">Offers</a>
+          <a href="#" className="hover:text-pink-600">
+            Shop
+          </a>
+          <a href="#" className="hover:text-pink-600">
+            Skincare
+          </a>
+          <a href="#" className="hover:text-pink-600">
+            Makeup
+          </a>
+          <a href="#" className="hover:text-pink-600">
+            Haircare
+          </a>
+          <a href="#" className="hover:text-pink-600">
+            Offers
+          </a>
         </div>
       )}
     </header>
