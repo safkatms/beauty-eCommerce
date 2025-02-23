@@ -19,6 +19,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         subCategory: true,
         images: true,
         variants: true,
+        _count: { select: { reviews: true } }, // Count total reviews
+        reviews: {
+          select: {
+            rating: true,
+            comment: true,
+            createdAt: true,
+            user: { select: { name: true } },
+          },
+          orderBy: { createdAt: "desc" }, // Order reviews by latest
+        },
       },
     });
 
@@ -26,9 +36,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    // Calculate average rating
+    const totalRatings = product.reviews.reduce((sum, r) => sum + r.rating, 0);
+    const avgRating = product.reviews.length > 0 ? (totalRatings / product.reviews.length).toFixed(1) : "0.0";
+
+    return NextResponse.json({
+      ...product,
+      avgRating: parseFloat(avgRating), // Ensure it's a number
+      totalReviews: product._count.reviews,
+    });
   } catch (error) {
-    console.error("Error fetching product:", error);
+    console.error("❌ Error fetching product:", error);
     return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });
   }
 }

@@ -7,6 +7,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
+import AddReview from "@/components/reviewAdd";
+import ReviewList from "@/components/reviewList";
 
 interface Product {
   id: number;
@@ -33,7 +35,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
-
+  const [refreshReviews, setRefreshReviews] = useState(false);
+  const [user, setUser] = useState<{ id: number } | null>(null);
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -56,7 +59,8 @@ export default function ProductDetailPage() {
     toast.success("Product added to cart!");
   };
 
-  if (loading) return <div className="text-center p-10">Loading product...</div>;
+  if (loading)
+    return <div className="text-center p-10">Loading product...</div>;
   if (error) return <div className="text-red-500 p-10">{error}</div>;
 
   return (
@@ -89,7 +93,9 @@ export default function ProductDetailPage() {
             <ChevronRight size={14} />
             <span>{product?.subCategory.name}</span>
             <ChevronRight size={14} />
-            <span className="text-pink-600 font-semibold">{product?.brand.name}</span>
+            <span className="text-pink-600 font-semibold">
+              {product?.brand.name}
+            </span>
           </div>
 
           {/* Product Name */}
@@ -97,17 +103,25 @@ export default function ProductDetailPage() {
 
           {/* Price & Discount */}
           <div className="flex items-center space-x-3 mt-3">
-            <span className="text-xl font-bold text-pink-600">${product?.priceAfterDiscount || product?.sellingPrice}</span>
+            <span className="text-xl font-bold text-pink-600">
+              ${product?.priceAfterDiscount || product?.sellingPrice}
+            </span>
             {product?.discount && (
-              <span className="text-gray-500 line-through">${product?.sellingPrice}</span>
+              <span className="text-gray-500 line-through">
+                ${product?.sellingPrice}
+              </span>
             )}
             {product?.discount && (
-              <span className="text-green-600 text-sm font-medium">-{product?.discount}% OFF</span>
+              <span className="text-green-600 text-sm font-medium">
+                -{product?.discount}% OFF
+              </span>
             )}
           </div>
 
           {/* Description */}
-          <p className="text-gray-600 mt-4">{product?.description || "No description available."}</p>
+          <p className="text-gray-600 mt-4">
+            {product?.description || "No description available."}
+          </p>
 
           {/* Variants */}
           {product?.hasVariants && (
@@ -118,7 +132,9 @@ export default function ProductDetailPage() {
                   <button
                     key={index}
                     className={`p-3 border rounded-lg text-sm ${
-                      selectedVariant === index ? "border-pink-600" : "border-gray-300"
+                      selectedVariant === index
+                        ? "border-pink-600"
+                        : "border-gray-300"
                     }`}
                     onClick={() => setSelectedVariant(index)}
                   >
@@ -142,6 +158,24 @@ export default function ProductDetailPage() {
             </button>
           </div>
         </div>
+      </div>
+      {/* ⭐ Reviews Section */}
+      <div className="mt-10">
+        <h2 className="text-2xl font-semibold mb-4">Customer Reviews</h2>
+
+        {/* Add Review Form */}
+        {/* Add Review Form (Only Render if Product ID Exists) */}
+        {/* Allow Guest Users to Leave a Review */}
+        {product?.id && (
+          <AddReview
+            productId={product.id}
+            userId={user?.id || null} // Allow guest users
+            onReviewAdded={() => setRefreshReviews(!refreshReviews)}
+          />
+        )}
+
+        {/* Customer Reviews */}
+        {product?.id && <ReviewList productId={product?.id} />}
       </div>
     </div>
   );

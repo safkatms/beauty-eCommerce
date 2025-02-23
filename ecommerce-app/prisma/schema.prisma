@@ -136,8 +136,9 @@ model Review {
   id         Int      @id @default(autoincrement())
   productId  Int
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int?     // Optional for guest users
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestName  String?  // Guest user's name
   rating     Int      // Rating from 1 to 5
   comment    String?
   createdAt  DateTime @default(now())
@@ -145,6 +146,7 @@ model Review {
 
   @@index([productId])
 }
+
 
 model QuestionAnswer {
   id         Int      @id @default(autoincrement())
