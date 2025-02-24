@@ -9,16 +9,17 @@ interface Product {
   name: string;
   brand: { name: string };
   sellingPrice: number;
-  priceAfterDiscount?: number; // Made optional
-  discount?: number; // Made optional
+  priceAfterDiscount?: number;
+  discount?: number;
   images: { imageUrl: string }[];
-  review?: number; // Made optional
+  avgRating?: number; // Corrected from `review`
+  totalReviews?: number; // Store total number of reviews
 }
 
 export default function ProductCard({ product }: { product: Product }) {
   const router = useRouter();
   const hasDiscount = product.discount && product.discount > 0;
-  const productRating = product.review ?? 0; // Ensure rating is not undefined
+  const productRating = product.avgRating ?? 0; // Use avgRating
 
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
@@ -59,7 +60,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <h3 className="text-lg font-semibold">{product.name}</h3>
         <p className="text-sm text-gray-500">{product.brand?.name || "Unknown Brand"}</p>
 
-        {/* Rating */}
+        {/* ⭐ Rating Section */}
         <div className="flex items-center gap-1 mt-2">
           {Array.from({ length: 5 }).map((_, index) => (
             <Star
@@ -68,10 +69,11 @@ export default function ProductCard({ product }: { product: Product }) {
               className={index < productRating ? "text-yellow-500" : "text-gray-300"}
             />
           ))}
-          <span className="text-sm text-gray-500 ml-1">({productRating.toFixed(1)})</span>
+          {/* <span className="text-sm text-gray-500 ml-1">({productRating.toFixed(1)})</span> */}
+          <span className="text-sm text-gray-500">({product.totalReviews} reviews)</span>
         </div>
 
-        {/* Price */}
+        {/* 💰 Price */}
         <div className="mt-2">
           {hasDiscount && product.sellingPrice && (
             <p className="text-xs text-gray-400 line-through">${product.sellingPrice.toFixed(2)}</p>
@@ -83,7 +85,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </p>
         </div>
 
-        {/* Add to Cart Button */}
+        {/* 🛒 Add to Cart Button */}
         <button
           onClick={handleAddToCart}
           className={`w-full mt-3 py-2 rounded-lg flex items-center justify-center gap-2 text-white ${

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/productCard";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import ReactPaginate from "react-paginate";
 
 interface Product {
   id: number;
@@ -20,8 +20,7 @@ interface Product {
 export default function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get("query") || "";
-  const router = useRouter();
-  
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -32,7 +31,7 @@ export default function SearchResults() {
 
     const fetchProducts = async () => {
       setLoading(true);
-      const response = await fetch(`/api/products/search?query=${query}&page=${page}`);
+      const response = await fetch(`/api/products/search/results?query=${query}&page=${page}`);
       const data = await response.json();
       setProducts(data.products);
       setTotalPages(data.totalPages);
@@ -41,6 +40,11 @@ export default function SearchResults() {
 
     fetchProducts();
   }, [query, page]);
+
+  // Handle page change
+  const handlePageChange = ({ selected }: { selected: number }) => {
+    setPage(selected + 1); // `selected` starts from 0
+  };
 
   return (
     <div className="container mx-auto px-6 py-10">
@@ -59,32 +63,24 @@ export default function SearchResults() {
             ))}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination using react-paginate */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center mt-8 gap-4">
-              <button
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                disabled={page === 1}
-                className={`px-4 py-2 rounded-full text-white transition ${
-                  page === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-pink-600 hover:bg-pink-700"
-                }`}
-              >
-                <ChevronLeft size={20} />
-              </button>
-
-              <span className="text-lg font-semibold text-gray-700">
-                Page {page} of {totalPages}
-              </span>
-
-              <button
-                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={page === totalPages}
-                className={`px-4 py-2 rounded-full text-white transition ${
-                  page === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-pink-600 hover:bg-pink-700"
-                }`}
-              >
-                <ChevronRight size={20} />
-              </button>
+            <div className="flex justify-center mt-8">
+              <ReactPaginate
+                previousLabel="← Prev"
+                nextLabel="Next →"
+                breakLabel="..."
+                pageCount={totalPages}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={3}
+                onPageChange={handlePageChange}
+                containerClassName="flex items-center space-x-2"
+                pageClassName="px-4 py-2 border rounded-md hover:bg-gray-100"
+                activeClassName="bg-pink-600 text-white"
+                previousClassName="px-4 py-2 border rounded-md hover:bg-gray-100"
+                nextClassName="px-4 py-2 border rounded-md hover:bg-gray-100"
+                disabledClassName="opacity-50 cursor-not-allowed"
+              />
             </div>
           )}
         </>

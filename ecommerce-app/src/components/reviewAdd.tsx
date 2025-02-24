@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Star, Send } from "lucide-react";
+import { toast } from "react-toastify";
 
 interface AddReviewProps {
   productId: number;
@@ -41,7 +42,7 @@ export default function AddReview({ productId, userId, onReviewAdded }: AddRevie
       setError(null);
       onReviewAdded(); // Refresh reviews
     } catch (err) {
-      setError("Error submitting review. Please try again.");
+      toast.error("Error submitting review. Please try again.");
     } finally {
       setLoading(false);
     }

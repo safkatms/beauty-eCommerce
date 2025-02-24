@@ -30,7 +30,7 @@ export default function ProductSearch() {
 
     const fetchResults = async () => {
       try {
-        const response = await fetch(`/api/products/search?query=${query}`);
+        const response = await fetch(`/api/products/search/dropdown?query=${query}`);
         const data = await response.json();
         setProducts(data.products || []); // Ensure array fallback
         setShowDropdown(true);
@@ -63,7 +63,7 @@ export default function ProductSearch() {
     e.preventDefault();
     if (query.trim()) {
       router.push(
-        `/products/search-results?query=${encodeURIComponent(query)}`
+        `/products/searchResults?query=${encodeURIComponent(query)}`
       );
       setShowDropdown(false);
     }
