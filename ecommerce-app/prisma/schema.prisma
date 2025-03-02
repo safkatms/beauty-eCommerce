@@ -213,3 +213,17 @@ model SubCategory {
 
   @@index([name])
 }
+
+
+//Banner Model
+
+model Banner {
+  id         Int      @id @default(autoincrement())
+  imageUrl   String   @unique  // URL of the banner image stored in Cloudinary
+  title      String?  // Optional title for the banner
+  description String? // Optional description text
+  link       String?  // Optional link (if banner should be clickable)
+  position   Int      @default(0)  // For sorting banners (lower values show first)
+  isActive   Boolean  @default(true) // Allow enabling/disabling banners
+  createdAt  DateTime @default(now())
+}
