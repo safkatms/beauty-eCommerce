@@ -10,6 +10,7 @@ import {
   Tag,
   Layers,
   ChevronDown,
+  Image,
 } from "lucide-react";
 
 export default function AdminSidebar() {
@@ -76,6 +77,7 @@ export default function AdminSidebar() {
               </div>
             )}
           </div>
+          <SidebarLink href="/banners" icon={<Image size={20} />} label="Banners" />
         </nav>
       </div>
 

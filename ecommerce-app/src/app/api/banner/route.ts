@@ -47,8 +47,11 @@ export async function POST(req: NextRequest) {
 
     const uploadResult = await cloudinary.v2.uploader.upload(dataUri, {
       folder: "banners",
+      width: 1920,   
+      height: 600,   
+      crop: "fill",  
     });
-
+    
     const imageUrl = uploadResult.secure_url;
 
     // ✅ Save to Database

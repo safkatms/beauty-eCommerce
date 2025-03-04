@@ -38,11 +38,13 @@ export default function BannerCarousel() {
   }
 
   if (!banners.length) {
-    return <p className="text-center text-gray-500">No banners available.</p>;
+    return (
+      <p className="text-center text-gray-500">No active banners available.</p>
+    );
   }
 
   return (
-    <div className="w-full max-w-screen-xl mx-auto">
+    <div className="w-full">
       <Swiper
         modules={[Navigation, Pagination, Autoplay]}
         slidesPerView={1}
@@ -50,18 +52,18 @@ export default function BannerCarousel() {
         pagination={{ clickable: true }}
         autoplay={{ delay: 5000 }}
         loop={true}
-        className="shadow-lg"
+        className="w-full"
       >
         {banners.map((banner) => (
           <SwiperSlide key={banner.id}>
-          <div className="relative w-full h-[400px] sm:h-[500px] lg:h-[600px]">
-            <img
-              src={banner.imageUrl}
-              alt={banner.title || "Banner"}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </SwiperSlide>        
+            <div className="relative w-full h-[300px] sm:h-[300px] md:h-[300px] lg:h-[300px] xl:h-[300px]">
+              <img
+                src={banner.imageUrl}
+                alt={banner.title || "Banner"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </SwiperSlide>
         ))}
       </Swiper>
     </div>

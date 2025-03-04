@@ -11,7 +11,7 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { motion } from "framer-motion";
-import { Trash2 } from "lucide-react";
+import { ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
@@ -59,7 +59,7 @@ const BannerTable = () => {
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`/api/upload-banner/delete/${id}`, { method: "DELETE" });
+        const response = await fetch(`/api/banner/${id}`, { method: "DELETE" });
 
         if (!response.ok) throw new Error("Failed to delete banner");
 
@@ -71,6 +71,25 @@ const BannerTable = () => {
     }
   };
 
+  const toggleActiveStatus = async (id: number, isActive: boolean) => {
+    try {
+      const response = await fetch(`/api/banner/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !isActive }),
+      });
+  
+      if (!response.ok) throw new Error("Failed to update banner status");
+  
+      setBanners((prev) =>
+        prev.map((banner) => (banner.id === id ? { ...banner, isActive: !isActive } : banner))
+      );
+      toast.success(`Banner ${isActive ? "deactivated" : "activated"} successfully!`);
+    } catch (error) {
+      toast.error("Error updating banner status");
+    }
+  };
+  
   const columns: ColumnDef<Banner>[] = [
     { accessorKey: "id", header: "ID", sortingFn: "alphanumeric" },
     {
@@ -92,9 +111,13 @@ const BannerTable = () => {
       accessorKey: "isActive",
       header: "Active",
       cell: ({ row }) => (
-        <span className={`px-2 py-1 rounded text-white ${row.original.isActive ? "bg-green-500" : "bg-red-500"}`}>
-          {row.original.isActive ? "Active" : "Inactive"}
-        </span>
+        <button onClick={() => toggleActiveStatus(row.original.id, row.original.isActive)}>
+          {row.original.isActive ? (
+            <ToggleRight size={24} className="text-green-500" />
+          ) : (
+            <ToggleLeft size={24} className="text-gray-400" />
+          )}
+        </button>
       ),
     },
     {
@@ -129,7 +152,7 @@ const BannerTable = () => {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"
+          className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full"
         />
         <p className="mt-3 text-lg text-gray-600 font-semibold animate-pulse">
           Fetching banners, please wait...
@@ -151,19 +174,19 @@ const BannerTable = () => {
           placeholder="Search banners..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
         />
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full border border-gray-300 shadow-md rounded-lg">
-          <thead className="bg-blue-600 text-white sticky top-0">
+          <thead className="bg-pink-600 text-white sticky top-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="p-3 text-left cursor-pointer hover:bg-blue-700 transition-all"
+                    className="p-3 text-left cursor-pointer hover:bg-pink-700 transition-all"
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {flexRender(
@@ -215,7 +238,7 @@ const BannerTable = () => {
         <button
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
         >
           Previous
         </button>
@@ -226,7 +249,7 @@ const BannerTable = () => {
         <button
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
         >
           Next
         </button>

@@ -21,7 +21,7 @@ export default function Banners() {
         {/* Toggle Button */}
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="mb-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition flex items-center gap-2"
+          className="mb-4 bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition flex items-center gap-2"
         >
           {showCreateForm ? <X size={18} /> : <Plus size={18} />}
           {showCreateForm ? "Hide Create Form" : "Add New Banner"}

@@ -50,7 +50,7 @@ export default function BannerUpload({ onBannerAdded }: { onBannerAdded: () => v
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to upload banner");
 
-      toast.success("✅ Banner uploaded successfully!");
+      toast.success("Banner uploaded successfully!");
       setTitle("");
       setDescription("");
       setLink("");
@@ -61,9 +61,9 @@ export default function BannerUpload({ onBannerAdded }: { onBannerAdded: () => v
       onBannerAdded();
     } catch (error) {
       if (error instanceof Error) {
-        toast.error(`❌ ${error.message}`);
+        toast.error(`${error.message}`);
       } else {
-        toast.error("❌ Something went wrong.");
+        toast.error("Something went wrong.");
       }
     }
 
@@ -80,7 +80,7 @@ export default function BannerUpload({ onBannerAdded }: { onBannerAdded: () => v
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter banner title"
-          className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
         />
 
         {/* 📝 Description */}
@@ -88,7 +88,7 @@ export default function BannerUpload({ onBannerAdded }: { onBannerAdded: () => v
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Enter banner description"
-          className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-pink-500"
         ></textarea>
 
         {/* 🔗 Optional Link */}
@@ -126,7 +126,7 @@ export default function BannerUpload({ onBannerAdded }: { onBannerAdded: () => v
         {/* 🚀 Submit Button */}
         <button
           type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
           disabled={loading}
         >
           {loading ? "Uploading..." : "Upload Banner"}
